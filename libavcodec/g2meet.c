@@ -389,7 +389,7 @@ static int kempf_decode_tile(G2MContext *c, int tile_x, int tile_y,
         return 0;
     zsize = (src[0] << 8) | src[1]; src += 2;
 
-    if (src_end - src < zsize)
+    if (src_end - src < zsize + (sub_type != 2))
         return AVERROR_INVALIDDATA;
 
     ret = uncompress(c->kempf_buf, &dlen, src, zsize);
@@ -411,6 +411,8 @@ static int kempf_decode_tile(G2MContext *c, int tile_x, int tile_y,
     for (i = 0; i < (FFALIGN(height, 16) >> 4); i++) {
         for (j = 0; j < (FFALIGN(width, 16) >> 4); j++) {
             if (!bits) {
+                if (src >= src_end)
+                    return AVERROR_INVALIDDATA;
                 bitbuf = *src++;
                 bits   = 8;
             }
@@ -441,8 +443,8 @@ static int g2m_init_buffers(G2MContext *c)
     int aligned_height;
 
     if (!c->framebuf || c->old_width < c->width || c->old_height < c->height) {
-        c->framebuf_stride = FFALIGN(c->width * 3, 16);
-        aligned_height     = FFALIGN(c->height,    16);
+        c->framebuf_stride = FFALIGN(c->width + 15, 16) * 3;
+        aligned_height     = c->height + 15;
         av_free(c->framebuf);
         c->framebuf = av_mallocz(c->framebuf_stride * aligned_height);
         if (!c->framebuf)
@@ -451,7 +453,7 @@ static int g2m_init_buffers(G2MContext *c)
     if (!c->synth_tile || !c->jpeg_tile ||
         c->old_tile_w < c->tile_width ||
         c->old_tile_h < c->tile_height) {
-        c->tile_stride = FFALIGN(c->tile_width * 3, 16);
+        c->tile_stride = FFALIGN(c->tile_width, 16) * 3;
         aligned_height = FFALIGN(c->tile_height,    16);
         av_free(c->synth_tile);
         av_free(c->jpeg_tile);
