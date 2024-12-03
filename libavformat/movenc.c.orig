@@ -422,6 +422,12 @@ static int handle_eac3(MOVMuxContext *mov, AVPacket *pkt, MOVTrack *track)
                 else
                     info->substream[parent].chan_loc |= hdr->channel_mode;
             }
+        } else {
+            if (hdr->substreamid != 0) {
+                avpriv_request_sample(mov->fc, "Multiple non EAC3 independent substreams");
+                ret = AVERROR_PATCHWELCOME;
+                goto end;
+            }
         }
     }
 
