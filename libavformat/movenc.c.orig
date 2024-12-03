@@ -153,6 +153,12 @@ static int mov_write_stsz_tag(AVIOContext *pb, MOVTrack *track)
                 avio_wb32(pb, track->cluster[i].size /
                          track->cluster[i].entries);
             }
+        } else {
+            if (hdr->substreamid != 0) {
+                avpriv_request_sample(mov->fc, "Multiple non EAC3 independent substreams");
+                ret = AVERROR_PATCHWELCOME;
+                goto end;
+            }
         }
     }
     return update_size(pb, pos);
