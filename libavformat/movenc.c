@@ -422,6 +422,12 @@ static int handle_eac3(MOVMuxContext *mov, AVPacket *pkt, MOVTrack *track)
                 else
                     info->substream[parent].chan_loc |= hdr->channel_mode;
             }
+        } else {
+            if (hdr->substreamid != 0) {
+                avpriv_request_sample(mov->fc, "Multiple non EAC3 independent substreams");
+                ret = AVERROR_PATCHWELCOME;
+                goto end;
+            }
         }
     }
 
@@ -4436,6 +4442,16 @@ int ff_mov_write_packet(AVFormatContext *s, AVPacket *pkt)
         samples_in_chunk = size / trk->sample_size;
     else
         samples_in_chunk = 1;
+
+    if (samples_in_chunk < 1) {
+        av_log(s, AV_LOG_ERROR, "fatal error, input packet contains no samples\n");
+        return AVERROR_PATCHWELCOME;
+    }
+
+    if (samples_in_chunk < 1) {
+        av_log(s, AV_LOG_ERROR, "fatal error, input packet contains no samples\n");
+        return AVERROR_PATCHWELCOME;
+    }
 
     if (samples_in_chunk < 1) {
         av_log(s, AV_LOG_ERROR, "fatal error, input packet contains no samples\n");
